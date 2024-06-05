@@ -1,0 +1,7 @@
+﻿  Inspection.c
+  UnicornTest.c
+  Generating Code...
+E:\SoftErrorGit\SoftErrorTestWithUnicorn_Win\SoftErrorTestWithUnicorn_Win\UnicornTest.c(60,11): warning C4477: 'printf' : format string '%lx' requires an argument of type 'unsigned long', but variadic argument 1 has type 'uint64_t'
+E:\SoftErrorGit\SoftErrorTestWithUnicorn_Win\SoftErrorTestWithUnicorn_Win\UnicornTest.c(496,11): warning C4477: 'scanf_s' : format string '%s' requires an argument of type 'unsigned int', but variadic argument 2 has type 'size_t'
+E:\SoftErrorGit\SoftErrorTestWithUnicorn_Win\SoftErrorTestWithUnicorn_Win\UnicornTest.c(538,8): warning C4244: 'function': conversion from 'time_t' to 'unsigned int', possible loss of data
+  SoftErrorTestWithUnicorn_Win.vcxproj -> E:\SoftErrorGit\SoftErrorTestWithUnicorn_Win\x64\Debug\SoftErrorTestWithUnicorn_Win.exe
