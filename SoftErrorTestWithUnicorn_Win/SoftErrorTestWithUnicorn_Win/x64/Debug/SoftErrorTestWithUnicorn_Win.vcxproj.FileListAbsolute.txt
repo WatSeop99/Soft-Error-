@@ -1,1 +1,5 @@
 E:\SoftErrorGit\SoftErrorTestWithUnicorn_Win\SoftErrorTestWithUnicorn_Win\x64\Debug\SoftErro.71B444C5.Up2Date
+E:\SoftErrorGit\SoftErrorTest\SoftErrorTestWithUnicorn_Win\SoftErrorTestWithUnicorn_Win\x64\Debug\SoftErrorTestWithUnicorn_Win.vcxproj.MdMergeInputs.cache
+E:\SoftErrorGit\SoftErrorTest\SoftErrorTestWithUnicorn_Win\SoftErrorTestWithUnicorn_Win\x64\Debug\SoftErrorTestWithUnicorn_Win.vcxproj.cppwinrt_plat.cache
+E:\SoftErrorGit\SoftErrorTest\SoftErrorTestWithUnicorn_Win\SoftErrorTestWithUnicorn_Win\x64\Debug\SoftErrorTestWithUnicorn_Win.vcxproj.cppwinrt_comp.cache
+E:\SoftErrorGit\SoftErrorTest\SoftErrorTestWithUnicorn_Win\SoftErrorTestWithUnicorn_Win\x64\Debug\SoftErro.71B444C5.Up2Date

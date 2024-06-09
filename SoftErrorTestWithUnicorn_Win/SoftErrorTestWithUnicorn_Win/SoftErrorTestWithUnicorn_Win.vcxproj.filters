@@ -52,6 +52,5 @@
     <None Include="Math_Compiled">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="packages.config" />
   </ItemGroup>
 </Project>

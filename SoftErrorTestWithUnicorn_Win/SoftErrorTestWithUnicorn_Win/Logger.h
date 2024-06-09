@@ -1,7 +1,7 @@
 #ifndef LOGGER
 #define LOGGER
 
-#define TEST
+// #define TEST
 #include "BST.h"
 
 typedef struct _registerInfo {
