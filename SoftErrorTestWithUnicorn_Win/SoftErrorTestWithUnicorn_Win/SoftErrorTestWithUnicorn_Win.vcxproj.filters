@@ -21,13 +21,7 @@
     <ClCompile Include="UnicornTest.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Logger.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Util.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="BST.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -42,9 +36,6 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Util.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="BST.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

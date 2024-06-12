@@ -65,7 +65,7 @@ void HookInstruction(uc_engine* pUC, uint64_t address, uint32_t size, void* pUse
 	if (g_bDirtyFlag)
 	{
 #ifndef TEST
-		printf("\nbit mask restore..\n");
+		printf("bit mask restore..\n");
 #endif
 
 		// restore text area.
@@ -120,12 +120,13 @@ void HookInstruction(uc_engine* pUC, uint64_t address, uint32_t size, void* pUse
 	if (num > g_ErrorProbability)
 	{
 		g_bDirtyFlag = False;
+		printf("\n\n");
 		return;
 	}
 
 	g_bDirtyFlag = True;
 #ifndef TEST
-	printf("\nbit masking Info...\n");
+	printf("bit masking Info...\n");
 #endif
 
 	// flip bit according to the option.
@@ -147,16 +148,9 @@ void HookInstruction(uc_engine* pUC, uint64_t address, uint32_t size, void* pUse
 		uc_mem_write(pUC, textAddress, &data, size);
 
 #ifndef TEST
-		printf("fliped instruction: 0x%" PRIx64 "\n", g_InstructionInfo.InstructionValue);
 		printf("fliped instruction address: 0x%" PRIx64 "\n", g_InstructionInfo.Address);
+		printf("original instruction: 0x%" PRIx64 "\n", g_InstructionInfo.InstructionValue);
 		printf("mask: 0x%x\n", mask);
-#else
-		BstNode* pNewNode = (BstNode*)malloc(sizeof(BstNode));
-		pNewNode->Key = g_InstructionInfo.Address;
-		pNewNode->Value = 1;
-		pNewNode->Height = 0;
-		pNewNode->pLeft = pNewNode->pRight = NULL;
-		Add(g_InstructionTree, &pNewNode);
 #endif
 	}
 	if (g_FaultFlag & Register)
@@ -227,21 +221,10 @@ void HookInstruction(uc_engine* pUC, uint64_t address, uint32_t size, void* pUse
 		printf("original register: 0x%x\n", g_RegisterInfo.Value);
 		printf("mask: 0x%x\n", g_RegisterInfo.Mask);
 		printf("bit flip register: 0x%x\n", regValue);
-#else
-		BstNode* pNewNode = (BstNode*)malloc(sizeof(BstNode));
-		pNewNode->Key = g_RegisterInfo.LastRegisterNo;
-		pNewNode->Value = 1;
-		pNewNode->Height = 0;
-		pNewNode->pLeft = pNewNode->pRight = NULL;
-		Add(g_RegisterTree, &pNewNode);
 #endif
 	}
 	if (g_FaultFlag & Stack)
 	{
-#ifndef TEST
-		printf("--Stack Area Bit Masking Info--\n");
-#endif
-
 		const unsigned int START_SP_VALUE = 0x80000;
 		uint64_t address = START_SP_VALUE;
 
@@ -253,109 +236,37 @@ void HookInstruction(uc_engine* pUC, uint64_t address, uint32_t size, void* pUse
 		g_StackInfo.Address = START_SP_VALUE;
 
 		// select the address of stack to bit flip.
-		if (spRegValue != START_SP_VALUE)
+		if (spRegValue <= START_SP_VALUE)
 		{
-			address = (rand() % ((spRegValue - START_SP_VALUE) / 4 + 1)) * 4 + START_SP_VALUE; // select address.
+#ifndef TEST
+			printf("--Stack Area Bit Masking Info--\n");
+#endif
+
+			spRegValue = spRegValue + (4 - spRegValue % 4) % 4;
+
+			// select stack address between spRegValue ~ START_SP_VALUE.
+			address = (rand() % ((START_SP_VALUE - spRegValue) / 4 + 1)) * 4 + spRegValue; // select address.
 			g_StackInfo.Address = address;
-		}
 
-		// flip stack area value.
-		uc_mem_read(pUC, address, &value, sizeof(unsigned int));
-		g_StackInfo.Value = value;
-		value ^= mask;
-		uc_mem_write(pUC, address, &value, sizeof(unsigned int));
+			// flip stack area value.
+			uc_mem_read(pUC, address, &value, sizeof(unsigned int));
+			g_StackInfo.Value = value;
+			value ^= mask;
+			uc_mem_write(pUC, address, &value, sizeof(unsigned int));
 
 #ifndef TEST
-		printf("address: 0x%x\n", g_StackInfo.Address);
-		printf("mask: 0x%x\n", mask);
-		printf("original value: 0x%x\n", g_StackInfo.Value);
-		printf("bit flip value: 0x%x\n", value);
-#else
-		BstNode* pNewNode = (BstNode*)malloc(sizeof(BstNode));
-		pNewNode->Key = g_StackInfo.Address;
-		pNewNode->Value = 1;
-		pNewNode->Height = 0;
-		pNewNode->pLeft = pNewNode->pRight = NULL;
-		Add(g_StackTree, &pNewNode);
+			printf("address: 0x%x\n", g_StackInfo.Address);
+			printf("mask: 0x%x\n", mask);
+			printf("original value: 0x%x\n", g_StackInfo.Value);
+			printf("bit flip value: 0x%x\n", value);
 #endif
+		}
 	}
 
 #ifndef TEST
-	printf("\n");
+	printf("\n\n");
 #endif
 }
-
-#ifdef TEST
-// Record
-void RecordFlipData()
-{
-	ListNode* pHead = g_InstructionTree->pList;
-	while (pHead)
-	{
-		BstNode* pNode = pHead->pKey;
-		BstNode* pFindNode = Get(g_TotalInstructionTree, pNode->Key);
-		if (pFindNode == NULL)
-		{
-			BstNode* pNewNode = (BstNode*)malloc(sizeof(BstNode));
-			pNewNode->Key = pNode->Key;
-			pNewNode->Value = pNode->Value;
-			pNewNode->Height = 0;
-			pNewNode->pLeft = pNewNode->pRight = NULL;
-			Add(g_TotalInstructionTree, &pNewNode);
-		}
-		else
-		{
-			pFindNode->Value += pNode->Value;
-		}
-
-		pHead = pHead->pPrev;
-	}
-
-	pHead = g_RegisterTree->pList;
-	while (pHead)
-	{
-		BstNode* pNode = pHead->pKey;
-		BstNode* pFindNode = Get(g_TotalRegisterTree, pNode->Key);
-		if (pFindNode == NULL)
-		{
-			BstNode* pNewNode = (BstNode*)malloc(sizeof(BstNode));
-			pNewNode->Key = pNode->Key;
-			pNewNode->Value = pNode->Value;
-			pNewNode->Height = 0;
-			pNewNode->pLeft = pNewNode->pRight = NULL;
-			Add(g_TotalRegisterTree, &pNewNode);
-		}
-		else
-		{
-			pFindNode->Value += pNode->Value;
-		}
-
-		pHead = pHead->pPrev;
-	}
-
-	pHead = g_StackTree->pList;
-	while (pHead)
-	{
-		BstNode* pNode = pHead->pKey;
-		BstNode* pFindNode = Get(g_TotalStackTree, pNode->Key);
-		if (pFindNode == NULL)
-		{
-			BstNode* pNewNode = (BstNode*)malloc(sizeof(BstNode));
-			pNewNode->Key = pNode->Key;
-			pNewNode->Value = pNode->Value;
-			pNewNode->Height = 0;
-			pNewNode->pLeft = pNewNode->pRight = NULL;
-			Add(g_TotalStackTree, &pNewNode);
-		}
-		else
-		{
-			pFindNode->Value += pNode->Value;
-		}
-
-		pHead = pHead->pPrev;
-	}
-}
-#endif
 
 void TestFunc(unsigned char* pARM32_CODE, unsigned long long fileSize, int codeLength)
 {
@@ -431,10 +342,9 @@ void TestFunc(unsigned char* pARM32_CODE, unsigned long long fileSize, int codeL
 	{
 		++g_SuccessCount;
 	}
-	else // fail type1
+	else // fail type2
 	{
 		++g_FailProducingResultCount;
-		RecordFlipData();
 	}
 #endif
 	goto LB_RET;
@@ -479,9 +389,8 @@ LB_ERROR_PROCESSING:
 	uc_reg_read(pUC, UC_ARM_REG_FP, &regValue);
 	printf("Last FP value: 0x%x\n", regValue);
 #ifdef TEST
-	// fail type2
+	// fail type1
 	++g_FailEmulationCount;
-	RecordFlipData();
 #endif
 
 LB_RET:
@@ -556,37 +465,23 @@ int main()
 	}
 
 #ifndef TEST
-	// g_FaultFlag = (Instruction | Stack | Register);
 	srand(time(NULL));
 	TestFunc(pARM32_CODE, fileSize, codeLength);
 #endif
 
 #ifdef TEST
-	if (InitializeTestEnv() == -1)
-	{
-		printf("Failed to initialize test environment.\n");
-		goto LB_END;
-	}
-
-	g_FaultFlag = (Stack);
-	g_ErrorProbability = 0.9f;
+	g_FaultFlag = (Instruction | Stack | Register);
+	g_ErrorProbability = 0.001f;
 	srand(time(NULL));
 	for (int i = 0; i < 1000; ++i)
 	{
 		TestFunc(pARM32_CODE, fileSize, codeLength);
-		ClearTree(&g_InstructionTree);
-		ClearTree(&g_RegisterTree);
-		ClearTree(&g_StackTree);
 	}
-	StoreTestResults();
 	printf("Success Probability: %lf\n", (float)g_SuccessCount / 1000.0f * 100.0f);
 	printf("Failed Producing Result Probability: %lf\n", (float)g_FailProducingResultCount / 1000.0f * 100.0f);
 	printf("Failed Emulation Probability: %lf\n", (float)g_FailEmulationCount / 1000.0f * 100.0f);
-
-	ClearTestEnv();
 #endif
 
-LB_END:
 	cs_close(&g_CSHandle);
 	if (pARM32_CODE)
 	{

@@ -1,12 +1,7 @@
-﻿  BST.c
-  Inspection.c
-  Logger.c
-  UnicornTest.c
-E:\SoftErrorGit\SoftErrorTest\SoftErrorTestWithUnicorn_Win\SoftErrorTestWithUnicorn_Win\Logger.c(43,3): warning C4098: 'StoreTestResults': 'void' function returning a value
-E:\SoftErrorGit\SoftErrorTest\SoftErrorTestWithUnicorn_Win\SoftErrorTestWithUnicorn_Win\Logger.c(51,20): warning C4477: 'fprintf_s' : format string '%x' requires an argument of type 'unsigned int', but variadic argument 1 has type 'uint64_t'
-E:\SoftErrorGit\SoftErrorTest\SoftErrorTestWithUnicorn_Win\SoftErrorTestWithUnicorn_Win\Logger.c(61,20): warning C4477: 'fprintf_s' : format string '%d' requires an argument of type 'int', but variadic argument 1 has type 'uint64_t'
-E:\SoftErrorGit\SoftErrorTest\SoftErrorTestWithUnicorn_Win\SoftErrorTestWithUnicorn_Win\Logger.c(71,20): warning C4477: 'fprintf_s' : format string '%x' requires an argument of type 'unsigned int', but variadic argument 1 has type 'uint64_t'
-E:\SoftErrorGit\SoftErrorTest\SoftErrorTestWithUnicorn_Win\SoftErrorTestWithUnicorn_Win\UnicornTest.c(573,8): warning C4244: 'function': conversion from 'time_t' to 'unsigned int', possible loss of data
-  Util.c
-  Generating Code...
+﻿  UnicornTest.c
+E:\SoftErrorGit\SoftErrorTest\SoftErrorTestWithUnicorn_Win\SoftErrorTestWithUnicorn_Win\UnicornTest.c(51,32): warning C4133: 'function': incompatible types - from 'unsigned __int64 *' to 'const uint8_t *'
+E:\SoftErrorGit\SoftErrorTest\SoftErrorTestWithUnicorn_Win\SoftErrorTestWithUnicorn_Win\UnicornTest.c(56,11): warning C4477: 'printf' : format string '%lx' requires an argument of type 'unsigned long', but variadic argument 1 has type 'uint64_t'
+E:\SoftErrorGit\SoftErrorTest\SoftErrorTestWithUnicorn_Win\SoftErrorTestWithUnicorn_Win\UnicornTest.c(257,11): warning C4477: 'printf' : format string '%x' requires an argument of type 'unsigned int', but variadic argument 1 has type 'uint64_t'
+E:\SoftErrorGit\SoftErrorTest\SoftErrorTestWithUnicorn_Win\SoftErrorTestWithUnicorn_Win\UnicornTest.c(426,11): warning C4477: 'scanf_s' : format string '%s' requires an argument of type 'unsigned int', but variadic argument 2 has type 'size_t'
+E:\SoftErrorGit\SoftErrorTest\SoftErrorTestWithUnicorn_Win\SoftErrorTestWithUnicorn_Win\UnicornTest.c(467,8): warning C4244: 'function': conversion from 'time_t' to 'unsigned int', possible loss of data
   SoftErrorTestWithUnicorn_Win.vcxproj -> E:\SoftErrorGit\SoftErrorTest\SoftErrorTestWithUnicorn_Win\x64\Debug\SoftErrorTestWithUnicorn_Win.exe

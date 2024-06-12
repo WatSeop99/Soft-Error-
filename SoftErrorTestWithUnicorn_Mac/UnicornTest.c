@@ -10,38 +10,32 @@
 #include <capstone/capstone.h>
 
 #include "DataType.h"
+#include "Util.h"
 #include "Logger.h"
 #include "Inspection.h"
 
-typedef int Bool;
-#define False 0
-#define True 1
-
 #define TIME_MOD 1000000000.0f
-#define TEST 1 // Test Mode.
 
 // Global variable.
 csh g_CSHandle;
 int g_DirtyCount = 0;
 int g_FaultFlag = 0;
-Bool g_bDirtyFlag = False;
-float g_ErrorProbability = 0.1f;
-int g_SuccessCount = 0;				// success count.
-int g_FailEmulationCount = 0; 		// fail type1 count.
-int g_FailProducingResultCount = 0; // fail type2 count.
 
 // Global variable for logging.
+Bool g_bDirtyFlag = False;
 RegisterInfo g_RegisterInfo = { 0, };
 StackInfo g_StackInfo = { 0, };
 InstructionInfo g_InstructionInfo = { 0, };
 
+// Global variable for test.
+float g_ErrorProbability = 0.0f;
+int g_SuccessCount = 0;				// success count.
+int g_FailEmulationCount = 0; 		// fail type1 count.
+int g_FailProducingResultCount = 0; // fail type2 count.
 
-int FileRead(unsigned char** ppCODE, int* pCodeLength);
-void PrintResult(uc_engine* pUC);
-
-void HookInstruction(uc_engine* pUC, uint64_t address, uint32_t size, void* userData)
+void HookInstruction(uc_engine* pUC, uint64_t address, uint32_t size, void* pUserData)
 {
-	unsigned char data[9] = { 0, };
+	unsigned long long data = 0;
 	cs_insn* pInsn = NULL;
 	size_t count = 0;
 	double num = 0.0f;
@@ -51,15 +45,15 @@ void HookInstruction(uc_engine* pUC, uint64_t address, uint32_t size, void* user
 	unsigned int spRegValue = 0;
 	unsigned int value = 0;
 
-#if !TEST
+#ifndef TEST
 	// print current instruction.
-	uc_mem_read(pUC, address, data, size);
-	count = cs_disasm(g_CSHandle, data, size, address , 0, &pInsn);
+	uc_mem_read(pUC, address, &data, size);
+	count = cs_disasm(g_CSHandle, &data, size, address, 0, &pInsn);
 	if (count > 0)
 	{
 		for (size_t i = 0; i < count; ++i)
 		{
-			printf(">>>>Instruction at 0x%x: %s %s\n", address, pInsn[i].mnemonic, pInsn[i].op_str);
+			printf(">>>>Instruction at 0x%lx: %s %s\n", address, pInsn[i].mnemonic, pInsn[i].op_str);
 		}
 
 		cs_free(pInsn, count);
@@ -70,22 +64,22 @@ void HookInstruction(uc_engine* pUC, uint64_t address, uint32_t size, void* user
 	// restore bit flip if dirty flag active.
 	if (g_bDirtyFlag)
 	{
-#if !TEST
-		printf("\nbit maks restore..\n");
-#endif 
+#ifndef TEST
+		printf("bit mask restore..\n");
+#endif
 
-		// restore PC.
+		// restore text area.
 		if (g_FaultFlag & Instruction)
 		{
-			uc_reg_write(pUC, UC_ARM_REG_PC, &(g_InstructionInfo.PCValue));
+			uc_mem_write(pUC, g_InstructionInfo.Address, &(g_InstructionInfo.InstructionValue), size);
 		}
 
 		// restore stack area.
 		if (g_FaultFlag & Stack)
 		{
-			uc_mem_write(pUC, g_StackInfo.Address + g_StackInfo.Offset, &(g_StackInfo.Value), sizeof(unsigned int));
+			uc_mem_write(pUC, g_StackInfo.Address, &(g_StackInfo.Value), sizeof(unsigned int));
 		}
-		
+
 		// restore resgister(r0~r5).
 		if (g_FaultFlag & Register)
 		{
@@ -126,40 +120,42 @@ void HookInstruction(uc_engine* pUC, uint64_t address, uint32_t size, void* user
 	if (num > g_ErrorProbability)
 	{
 		g_bDirtyFlag = False;
+		printf("\n\n");
 		return;
 	}
 
 	g_bDirtyFlag = True;
-#if !TEST
-	printf("\nbit masking Info...\n");
+#ifndef TEST
+	printf("bit masking Info...\n");
 #endif
 
 	// flip bit according to the option.
 	if (g_FaultFlag & Instruction)
 	{
-#if !TEST
-		printf("--PC Bit Masking Info--\n");
-#endif 
+#ifndef TEST
+		printf("--Instruction Bit Masking Info--\n");
+#endif
 		// create mask value.
-		mask = rand() % 32;
+		mask = rand() % (size * 8);
 		g_InstructionInfo.Mask = mask;
 
-		// flip PC value using mask.
-		uc_reg_read(pUC, UC_ARM_REG_PC, &pcValue);
-		g_InstructionInfo.PCValue = pcValue;
-		pcValue ^= mask;
-		uc_reg_write(pUC, UC_ARM_REG_PC, &pcValue);
+		// flip Instruction using mask.
+		uint64_t textAddress = (rand() % ((0xc664 - 0x8000) / 4 + 1)) * 4 + 0x8000;
+		g_InstructionInfo.Address = textAddress;
+		uc_mem_read(pUC, textAddress, &data, size);
+		g_InstructionInfo.InstructionValue = data;
+		data ^= mask;
+		uc_mem_write(pUC, textAddress, &data, size);
 
-#if !TEST
-		printf("original pc: 0x%x\n", g_InstructionInfo.PCValue);
+#ifndef TEST
+		printf("fliped instruction address: 0x%" PRIx64 "\n", g_InstructionInfo.Address);
+		printf("original instruction: 0x%" PRIx64 "\n", g_InstructionInfo.InstructionValue);
 		printf("mask: 0x%x\n", mask);
-		printf("bit flip pc: 0x%x\n", pcValue);
 #endif
-
 	}
 	if (g_FaultFlag & Register)
 	{
-#if !TEST
+#ifndef TEST
 		printf("--Register Bit Masking Info--\n");
 #endif
 
@@ -219,125 +215,57 @@ void HookInstruction(uc_engine* pUC, uint64_t address, uint32_t size, void* user
 			default:
 				break;
 		}
-		
-#if !TEST
+
+#ifndef TEST
 		printf("chosen register: r%d\n", g_RegisterInfo.LastRegisterNo);
-		printf("original register: r%d\n", g_RegisterInfo.Value);
+		printf("original register: 0x%x\n", g_RegisterInfo.Value);
 		printf("mask: 0x%x\n", g_RegisterInfo.Mask);
 		printf("bit flip register: 0x%x\n", regValue);
 #endif
 	}
 	if (g_FaultFlag & Stack)
 	{
-#if !TEST
-		printf("--Stack Area Bit Masking Info--\n");
-#endif
-
 		const unsigned int START_SP_VALUE = 0x80000;
-		unsigned int offset = 0;
+		uint64_t address = START_SP_VALUE;
 
 		// create maks value.
 		mask = rand() % 32;
 		g_StackInfo.Mask = mask;
 
 		uc_reg_read(pUC, UC_ARM_REG_SP, &spRegValue);
-		g_StackInfo.Address = spRegValue;
-		g_StackInfo.Offset = 0;
+		g_StackInfo.Address = START_SP_VALUE;
 
-		// select the point of stack to bit flip.
-		// point is calculated as (current sp address + offset
-		if (spRegValue != START_SP_VALUE)
+		// select the address of stack to bit flip.
+		if (spRegValue <= START_SP_VALUE)
 		{
-			offset = rand() % (START_SP_VALUE - spRegValue + 1); // create offset.
-			g_StackInfo.Offset = offset;
+#ifndef TEST
+			printf("--Stack Area Bit Masking Info--\n");
+#endif
+
+			spRegValue = spRegValue + (4 - spRegValue % 4) % 4;
+
+			// select stack address between spRegValue ~ START_SP_VALUE.
+			address = (rand() % ((START_SP_VALUE - spRegValue) / 4 + 1)) * 4 + spRegValue; // select address.
+			g_StackInfo.Address = address;
+
+			// flip stack area value.
+			uc_mem_read(pUC, address, &value, sizeof(unsigned int));
+			g_StackInfo.Value = value;
+			value ^= mask;
+			uc_mem_write(pUC, address, &value, sizeof(unsigned int));
+
+#ifndef TEST
+			printf("address: 0x%x\n", g_StackInfo.Address);
+			printf("mask: 0x%x\n", mask);
+			printf("original value: 0x%x\n", g_StackInfo.Value);
+			printf("bit flip value: 0x%x\n", value);
+#endif
 		}
+	}
 
-		// flip stack area value.
-		uc_mem_read(pUC, spRegValue + offset, &value, sizeof(unsigned int));
-		g_StackInfo.Value = value;
-		value ^= mask;
-		uc_mem_write(pUC, spRegValue + offset, &value, sizeof(unsigned int));
-
-#if !TEST
-		printf("original sp: 0x%x\n", g_StackInfo.Address);
-		printf("address: 0x%x\n", g_StackInfo.Address + g_StackInfo.Offset);
-		printf("mask: 0x%x\n", mask);
-		printf("original value: 0x%x\n", g_StackInfo.Value);
-		printf("bit flip value: 0x%x\n", value);
+#ifndef TEST
+	printf("\n\n");
 #endif
-	}
-
-#if !TEST
-	printf("\n");
-#endif
-}
-
-int FileRead(unsigned char** ppCODE, int* pCodeLength)
-{
-	FILE* pFile = NULL;
-	unsigned char* pARM32_CODE = NULL;
-	unsigned long long fileSize = 0;
-	int codeLength = 0;
-	const int CODE_OFFSET = 0x1000;
-
-	pFile = fopen("./Math_Compiled", "rb");
-	if (pFile == NULL)
-	{
-		printf("Failed to open file with %d.\n", errno);
-		return -1;
-	}
-
-	fseek(pFile, 0, SEEK_END);
-	fileSize = ftell(pFile);
-	pARM32_CODE = (unsigned char*)malloc(fileSize);
-	if (!pARM32_CODE)
-	{
-		printf("Failed to allocate data memory.\n");
-		return -1;
-	}
-	memset(pARM32_CODE, 0, fileSize);
-
-	fseek(pFile, CODE_OFFSET, SEEK_SET);
-
-	while (!feof(pFile))
-	{
-		fread(&pARM32_CODE[codeLength], sizeof(unsigned char), 1, pFile);
-		++codeLength;
-	}
-
-	fclose(pFile);
-	*ppCODE = pARM32_CODE;
-	*pCodeLength = codeLength;
-
-	return fileSize;
-}
-
-void PrintResult(uc_engine* pUC)
-{
-	int regValue = 0;
-	float floatResult = 0.0f;
-	Vector2 vec2Result = { 0.0f, };
-	Vector3 vec3Result = { 0.0f, };
-	Vector4 vec4Result = { 0.0f, };
-	Matrix matResult = { 0.0f, };
-
-	// print global variable in memory.
-	uc_mem_read(pUC, 0xdd0c, (void*)(&floatResult), sizeof(float));
-	uc_mem_read(pUC, 0xdd10, (void*)(&vec2Result), sizeof(Vector2));
-	uc_mem_read(pUC, 0xdd18, (void*)(&vec3Result), sizeof(Vector3));
-	uc_mem_read(pUC, 0xdd24, (void*)(&vec4Result), sizeof(Vector4));
-	uc_mem_read(pUC, 0xdd34, (void*)(&matResult), sizeof(Matrix));
-
-	printf("Print test result.\n");
-	printf("float result: %f\n", floatResult);
-	printf("vector2 result: { %f, %f }\n", vec2Result.X, vec2Result.Y);
-	printf("vector3 reuslt: { %f, %f, %f }\n", vec3Result.X, vec3Result.Y, vec3Result.Z);
-	printf("vector4 result: { %f, %f, %f, %f }\n", vec4Result.X, vec4Result.Y, vec4Result.Z, vec4Result.W);
-	printf("matrix result: \n{ %f, %f, %f, %f,\n %f, %f, %f, %f, \n %f, %f, %f, %f,\n %f, %f, %f, %f }\n",
-		   matResult._11, matResult._12, matResult._13, matResult._14,
-		   matResult._21, matResult._22, matResult._23, matResult._24,
-		   matResult._31, matResult._32, matResult._33, matResult._34,
-		   matResult._41, matResult._42, matResult._43, matResult._44);
 }
 
 void TestFunc(unsigned char* pARM32_CODE, int fileSize, int codeLength)
@@ -389,7 +317,7 @@ void TestFunc(unsigned char* pARM32_CODE, int fileSize, int codeLength)
 
 	// emulate code with 5sec.
 	// if duration goes over 5sec, then emulation would fail.
-	err = uc_emu_start(pUC, ENTRY_POINT_ADDRESS, ENTRY_POINT_END_ADDRESS, 0, 0);
+	err = uc_emu_start(pUC, ENTRY_POINT_ADDRESS, ENTRY_POINT_END_ADDRESS, 5000000, 0);
 	if (err != UC_ERR_OK)
 	{
 		printf("Failed to emulate code error with %u(%s).\n", err, uc_strerror(err));
@@ -402,28 +330,28 @@ void TestFunc(unsigned char* pARM32_CODE, int fileSize, int codeLength)
 		goto LB_ERROR_PROCESSING;
 	}
 
-#if !TEST
+#ifndef TEST
 	// print executed time.
 	{
-		double elapsedTime = (curTime.tv_sec - prevTime.tv_sec) + (curTime.tv_nsec - prevTime.tv_nsec) / TIME_MOD;
-		printf("Elapsed Time: %lf\n", elapsedTime);
+		UINT64 elapsedCounter = curCounter.QuadPart - prevCounter.QuadPart;
+		float elapsedSec = (float)elapsedCounter / (float)startFrequency.QuadPart;
+		printf("\nElapsed Time: %lf ms.\n", elapsedSec * 1000.0f);
 	}
 	PrintResult(pUC);
 #endif
 
 	printf("[System] Emulation done.\n");
 
-#if TEST
+#ifdef TEST
 	if (InspectEmulationResult(pUC) == 0) // success
 	{
 		++g_SuccessCount;
 	}
-	else // fail type1
+	else // fail type2
 	{
 		++g_FailProducingResultCount;
 	}
 #endif
-
 	goto LB_RET;
 
 LB_ERROR_PROCESSING:
@@ -465,8 +393,8 @@ LB_ERROR_PROCESSING:
 	printf("Last SP value: 0x%x\n", regValue);
 	uc_reg_read(pUC, UC_ARM_REG_FP, &regValue);
 	printf("Last FP value: 0x%x\n", regValue);
-#if TEST
-	// fail type2
+#ifdef TEST
+	// fail type1
 	++g_FailEmulationCount;
 #endif
 
@@ -493,7 +421,7 @@ int main()
 		goto LB_MAIN_RET;
 	}
 
-#if !TEST
+#ifndef TEST
 	printf("Select bit flip option.\n");
 	printf("Select an option. You can enter the option in three digits.\n");
 	printf("The first number is instruction, the second number is stack, and the last number is register.\n");
@@ -541,18 +469,17 @@ int main()
 		goto LB_MAIN_RET;
 	}
 
-#if !TEST
-	// g_FaultFlag = (Instruction | Stack | Register);
+#ifndef TEST
 	srand(time(NULL));
 	TestFunc(pARM32_CODE, fileSize, codeLength);
 #endif
 
-#if TEST
+#ifdef TEST
 	g_FaultFlag = (Instruction | Stack | Register);
-	g_ErrorProbability = 0.01f;
+	g_ErrorProbability = 0.001f;
+	srand(time(NULL));
 	for (int i = 0; i < 1000; ++i)
 	{
-		srand(time(NULL));
 		TestFunc(pARM32_CODE, fileSize, codeLength);
 	}
 	printf("Success Probability: %lf\n", (float)g_SuccessCount / 1000.0f * 100.0f);

@@ -34,4 +34,8 @@ enum
     Register = 0x100
 };
 
+typedef int Bool;
+#define False 0
+#define True 1
+
 #endif

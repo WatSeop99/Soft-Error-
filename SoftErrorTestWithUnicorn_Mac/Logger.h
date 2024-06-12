@@ -1,6 +1,8 @@
 #ifndef LOGGER
 #define LOGGER
 
+#define TEST 1 // Test Mode.
+
 typedef struct _registerInfo {
 	unsigned int LastRegisterNo;
 	unsigned int Mask;

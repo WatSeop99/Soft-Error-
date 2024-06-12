@@ -127,14 +127,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="BST.c" />
     <ClCompile Include="Inspection.c" />
-    <ClCompile Include="Logger.c" />
     <ClCompile Include="UnicornTest.c" />
     <ClCompile Include="Util.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BST.h" />
     <ClInclude Include="DataType.h" />
     <ClInclude Include="Inspection.h" />
     <ClInclude Include="Logger.h" />
