@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <errno.h>
 #include "Util.h"
 
@@ -10,7 +11,7 @@ unsigned long long ReadBinaryFile(unsigned char** ppCODE, int* pCodeLength)
 	int codeLength = 0;
 	const int CODE_OFFSET = 0x1000;
 
-	fopen_s(&pFile, "./Math_Compiled", "rb");
+	pFile = fopen("./Math_Compiled", "rb");
 	if (pFile == NULL)
 	{
 		printf("Failed to open file with %d.\n", errno);

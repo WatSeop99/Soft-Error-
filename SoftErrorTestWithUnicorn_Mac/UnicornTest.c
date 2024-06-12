@@ -268,7 +268,7 @@ void HookInstruction(uc_engine* pUC, uint64_t address, uint32_t size, void* pUse
 #endif
 }
 
-void TestFunc(unsigned char* pARM32_CODE, int fileSize, int codeLength)
+void TestFunc(unsigned char* pARM32_CODE, unsigned long long fileSize, int codeLength)
 {
 	uc_engine* pUC = NULL;
 	uc_hook traceInsn;
@@ -333,9 +333,8 @@ void TestFunc(unsigned char* pARM32_CODE, int fileSize, int codeLength)
 #ifndef TEST
 	// print executed time.
 	{
-		UINT64 elapsedCounter = curCounter.QuadPart - prevCounter.QuadPart;
-		float elapsedSec = (float)elapsedCounter / (float)startFrequency.QuadPart;
-		printf("\nElapsed Time: %lf ms.\n", elapsedSec * 1000.0f);
+		double elapsedTime = (curTime.tv_sec - prevTime.tv_sec) + (curTime.tv_nsec - prevTime.tv_nsec) / TIME_MOD;
+		printf("Elapsed Time: %lf\n", elapsedTime);
 	}
 	PrintResult(pUC);
 #endif
@@ -429,7 +428,7 @@ int main()
 	do
 	{
 		printf("==> ");
-		scanf_s("%s", option, sizeof(option));
+		scanf("%s", option);
 		if (strlen(option) != 3)
 		{
 			printf("try again.");
@@ -450,7 +449,7 @@ int main()
 	do
 	{
 		printf("==> ");
-		scanf_s("%f", &g_ErrorProbability);
+		scanf("%f", &g_ErrorProbability);
 		if (g_ErrorProbability < 0.0 || g_ErrorProbability > 1.0f)
 		{
 			printf("Probability must be a prime number between 0 and 1.\n");
@@ -463,7 +462,7 @@ int main()
 #endif
 
 	printf("Read compiled file...\n");
-	fileSize = FileRead(&pARM32_CODE, &codeLength);
+	fileSize = ReadBinaryFile(&pARM32_CODE, &codeLength);
 	if (fileSize == -1)
 	{
 		goto LB_MAIN_RET;

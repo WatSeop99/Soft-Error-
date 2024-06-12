@@ -1,7 +1,7 @@
 #ifndef LOGGER
 #define LOGGER
 
-#define TEST 1 // Test Mode.
+// #define TEST
 
 typedef struct _registerInfo {
 	unsigned int LastRegisterNo;
@@ -10,14 +10,15 @@ typedef struct _registerInfo {
 } RegisterInfo;
 
 typedef struct _stackInfo {
-	unsigned int Address;
-	unsigned int Offset;
+	uint64_t Address;
 	unsigned int Value;
 	unsigned int Mask;
 } StackInfo;
 
 typedef struct _instructionInfo {
-	unsigned int PCValue;
+	unsigned long long InstructionValue;
+	// uint64_t PCValue;
+	uint64_t Address;
 	unsigned int Mask;
 } InstructionInfo;
 
